@@ -22,7 +22,10 @@ import importlib.util
 import io
 import json
 import os
+import re
+import subprocess
 import sys
+import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -48,6 +51,34 @@ def js(t):
              .replace('\n', '\\n').replace('</', '<\\/'))
 
 
+def _check_page_scripts(html):
+    """Fail before embedding a page whose scripts no longer parse.
+
+    Stripping localStorage.getItem lines is silent when it tears a function
+    in half. node --check catches that before the guide is rewritten.
+    """
+    bodies = re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>', html, re.S | re.I)
+    for i, body in enumerate(bodies):
+        if not body.strip():
+            continue
+        fd, path = tempfile.mkstemp(suffix='.js')
+        try:
+            with io.open(fd, 'w', encoding='utf-8', newline='') as fh:
+                fh.write(body)
+            try:
+                r = subprocess.run(['node', '--check', path],
+                                   capture_output=True, text=True)
+            except OSError as e:
+                sys.exit('node is required to check the embedded page: %s' % e)
+            if r.returncode:
+                sys.exit('page.html script %d does not parse after removing '
+                         'localStorage.getItem lines. Each such line must be '
+                         'a whole statement that can be deleted on its own.\n%s'
+                         % (i, r.stderr))
+        finally:
+            os.unlink(path)
+
+
 def replace_var(name, literal):
     """Swap the value of `var NAME="...";`, whatever it currently holds."""
     global s
@@ -66,11 +97,15 @@ def replace_var(name, literal):
 
 page = io.open(os.path.join(HTTPD, 'page.html'),
                encoding='utf-8', newline='').read()
-# the theme follows the guide, not the visitor's localStorage
+# the theme follows the guide, not the visitor's localStorage.
+# Every line containing localStorage.getItem is removed whole, so that line
+# has to be a complete statement: splitting it, or putting a return on it,
+# leaves the mock's script unable to parse and every demo stuck on 日常刷机.
 page = '\n'.join(l for l in page.split('\n') if 'localStorage.getItem' not in l)
 for k, v in pv.MACROS.items():
     page = page.replace('@@%s@@' % k, v)
 assert '@@' not in page, 'unsubstituted macro left in the page'
+_check_page_scripts(page)
 
 replace_var('PAGE', js(page))
 replace_var('INFO', js(json.dumps(pv.INFO, ensure_ascii=False)))
