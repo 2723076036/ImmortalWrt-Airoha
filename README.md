@@ -10,7 +10,7 @@
 
 ## 支持机型
 
-Nokia XG-040G-MD、Nokia XG-040G-MF、Nokia XG-140G-MD、Nokia XG-140G-MF、Nokia XG-040G-TF、ZNXT ZN504XG-D、ZNXT ZN515XG-D
+Nokia XG-040G-MD、Nokia XG-040G-MF、Nokia XG-140G-MD、Nokia XG-140G-MF、Nokia XG-040G-TF、ZNXT ZN504XG-D、ZNXT ZN515XG-D、FiberHome HG5382A（闪存按 ECC4 读写，与 pbs05/uboot-an758x 相同，改 ECC4 后待实机验证；从原厂迁移首次须在网页 U-Boot 勾「重建 UBI」连同固件与 FIP 一起刷，从 pbs05 迁移可不重建；装过本项目 ECC8 版本的须像首次迁移一样经串口换引导并重建 UBI）
 
 ![网页 U-Boot](img/web-uboot.png)
 
@@ -19,7 +19,7 @@ Nokia XG-040G-MD、Nokia XG-040G-MF、Nokia XG-140G-MD、Nokia XG-140G-MF、Noki
 ## 刷机之前
 
 > [!WARNING]
-> **准备好 USB-TTL 串口，随时准备救砖。** 刷之前务必做整片 flash 备份：`ri`（MAC、序列号）和 `bosa`（光模块校准）每台机器独有，丢了没有地方找回。
+> **准备好 USB-TTL 串口，随时准备救砖。** 刷之前务必做整片 flash 备份：`ri`（MAC、序列号）和 `bosa`（光模块校准）每台机器独有，丢了没有地方找回；ZN504XG-D 对应的是 `reservearea`，HG5382A 用 [fiberhome-factory](https://github.com/pbs05/fiberhome-factory) 从原厂备份生成 `factory` 卷镜像。
 
 - [获取超级密码](https://www.right.com.cn/FORUM/thread-8440823-1-1.html)
 - [拆机、刷机、配置、原厂分区备份教程](https://www.right.com.cn/forum/thread-8467912-1-1.html)
@@ -50,7 +50,7 @@ Nokia XG-040G-MD、Nokia XG-040G-MF、Nokia XG-140G-MD、Nokia XG-140G-MF、Noki
 本仓库只放编译配置、自带软件包、网页与 CI；固件源码在 [Loong1996/immortalwrt](https://github.com/Loong1996/immortalwrt) 的 `master-airoha` 分支（immortalwrt `master`，内核 6.18），机型支持和 U-Boot 补丁都在源码树里。
 
 1. Fork 本仓库，在 Actions 页面启用 workflow。
-2. `Actions → ImmortalWrt-Airoha → Run workflow`，机型默认 `all`（并行编全部），也可单选 `xg-040g-md` / `xg-040g-mf` / `xg-040g-tf` / `zn504xg-d`。再选变体。内存容量默认[自适应](docs/variants.md#内存容量)，不用管。
+2. `Actions → ImmortalWrt-Airoha → Run workflow`，机型默认 `all`（并行编全部），也可单选 `xg-040g-md` / `xg-040g-mf` / `xg-040g-tf` / `zn504xg-d` / `hg5382a`。再选变体。内存容量默认[自适应](docs/variants.md#内存容量)，不用管。
 3. 约 1~2 小时后出固件，去向由「发布方式」决定：
    - `auto`（默认）：main 上编 `master-airoha` 发到本仓库的 Releases；别的分支只传 Artifact。
    - `prerelease`：发 Release 但标 pre-release，不盖 Latest，也不进教程的下载列表。
